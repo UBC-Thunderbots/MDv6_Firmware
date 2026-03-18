@@ -113,18 +113,6 @@ int main(void)
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
-
-  while (1)
-  {
-    /* USER CODE END WHILE */
-
-    HAL_GPIO_WritePin(MD_DEBUG_LED_GPIO_Port, MD_DEBUG_LED_Pin, GPIO_PIN_SET);
-    HAL_Delay(500);
-    HAL_GPIO_WritePin(MD_DEBUG_LED_GPIO_Port, MD_DEBUG_LED_Pin, GPIO_PIN_RESET);
-    HAL_Delay(500);
-    /* USER CODE BEGIN 3 */
-  }
-
   Interface_Init();
   Interface_Loop();
   /* USER CODE END 2 */
