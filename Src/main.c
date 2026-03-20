@@ -122,7 +122,8 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-    HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4); 
+    //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_4); 
+    HAL_GPIO_TogglePin(MD_DEBUG_LED_GPIO_Port, MD_DEBUG_LED_Pin);
     HAL_Delay(500);
     /* USER CODE BEGIN 3 */
   }
