@@ -16,7 +16,7 @@
   *
   ******************************************************************************
   */
-/* USER CODE END Header */
+/* USER CODE END HeMD_DEBUG_LED_GPIO_der */
 
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H
@@ -66,6 +66,8 @@ void Error_Handler(void);
 #define M1_HALL_H2_GPIO_Port GPIOA
 #define M1_HALL_H3_Pin GPIO_PIN_2
 #define M1_HALL_H3_GPIO_Port GPIOA
+#define TEST_POINT_13_PIN GPIO_PIN_3
+#define TEST_POINT_13_GPIO_Port GPIOA
 #define MD_DEBUG_LED_Pin GPIO_PIN_4
 #define MD_DEBUG_LED_GPIO_Port GPIOA
 #define M1_CURR_AMPL_Pin GPIO_PIN_5
