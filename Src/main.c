@@ -118,7 +118,7 @@ int main(void)
   MC_GetSTMStateMotor1(); // set a breakpoint on the line if reading the state via Debugger
   MC_GetOccurredFaultsMotor1();
 
-  MC_ProgramSpeedRampMotor1_F(900,1000);
+  MC_ProgramSpeedRampMotor1_F(1500,1000);
 
   //MC_ProgramTorqueRampMotor1_F(1.0,1000);
   MC_StartMotor1();
