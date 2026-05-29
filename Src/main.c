@@ -29,6 +29,15 @@
 
 /* USER CODE END PTD */
 
+#define SPI_BUFFER_SIZE 4
+
+// Data the STM32 will send BACK to the Raspberry Pi
+uint8_t tx_buffer[SPI_BUFFER_SIZE] = {0xDE, 0xAD, 0xBE, 0xEF}; 
+// Data the STM32 will receive FROM the Raspberry Pi
+uint8_t rx_buffer[SPI_BUFFER_SIZE] = {0};
+
+HAL_StatusTypeDef spi_status;
+
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
@@ -114,23 +123,49 @@ int main(void)
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
 
+  while (1)
+  {
+    /* 
+       The STM32 will halt at this line until the Raspberry Pi pulls CS LOW 
+       and sends exactly SPI_BUFFER_SIZE clock cycles.
+       It simultaneously sends tx_buffer and receives rx_buffer.
+    */
+    spi_status = HAL_SPI_TransmitReceive(&hspi1, tx_buffer, rx_buffer, SPI_BUFFER_SIZE, HAL_MAX_DELAY);
+    
+    if (spi_status == HAL_OK)
+    {
+        // Optional: Modify tx_buffer based on what the Pi sent to prove processing works
+        // Example: tx_buffer[0] = rx_buffer[0] + 1;
+        
+        // Brief delay before locking the peripheral back into listening mode
+        HAL_Delay(1); 
+    }
+    else
+    {
+        // If an error or timeout happens, reset the SPI peripheral to clear error flags
+        __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
+        HAL_SPI_Init(&hspi1);
+    }
+    
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+  }
+
+
   // call it once for live expression
   MC_GetSTMStateMotor1(); // set a breakpoint on the line if reading the state via Debugger
   MC_GetOccurredFaultsMotor1();
 
-  MC_ProgramSpeedRampMotor1_F(1500,1000);
+  MC_ProgramSpeedRampMotor1_F(900,1000);
 
-  //MC_ProgramTorqueRampMotor1_F(1.0,1000);
+  //MC_ProgramTorqueRampMotor1_F(3.0,1000);
+  
   MC_StartMotor1();
   while(1)
   {
-  MC_StartMotor1();
-  HAL_Delay(5000);
 
-  MC_StopMotor1();
-  HAL_Delay(1000);
   }
-  MC_StopMotor1();
 
   Interface_Init();
   Interface_Loop();
