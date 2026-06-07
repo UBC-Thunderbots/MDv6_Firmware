@@ -29,15 +29,6 @@
 
 /* USER CODE END PTD */
 
-#define SPI_BUFFER_SIZE 4
-
-// Data the STM32 will send BACK to the Raspberry Pi
-uint8_t tx_buffer[SPI_BUFFER_SIZE] = {0xDE, 0xAD, 0xBE, 0xEF}; 
-// Data the STM32 will receive FROM the Raspberry Pi
-uint8_t rx_buffer[SPI_BUFFER_SIZE] = {0};
-
-HAL_StatusTypeDef spi_status;
-
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
@@ -122,7 +113,6 @@ int main(void)
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
-
   Interface_Init();
   Interface_Loop();
   /* USER CODE END 2 */
