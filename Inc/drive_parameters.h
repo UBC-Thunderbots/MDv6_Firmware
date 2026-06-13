@@ -56,11 +56,11 @@
 #define ISR_FREQUENCY_HZ                    (PWM_FREQUENCY/REGULATION_EXECUTION_RATE) /*!< @brief FOC execution rate in Hz */
 
 /* Gains values for torque and flux control loops */
-#define PID_TORQUE_KP_DEFAULT               2247
-#define PID_TORQUE_KI_DEFAULT               1151
+#define PID_TORQUE_KP_DEFAULT               749
+#define PID_TORQUE_KI_DEFAULT               384
 #define PID_TORQUE_KD_DEFAULT               100
-#define PID_FLUX_KP_DEFAULT                 2247
-#define PID_FLUX_KI_DEFAULT                 1151
+#define PID_FLUX_KP_DEFAULT                 749
+#define PID_FLUX_KI_DEFAULT                 384
 #define PID_FLUX_KD_DEFAULT                 100
 
 /* Torque/Flux control loop gains dividers*/
