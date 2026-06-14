@@ -72,19 +72,19 @@
 #define TF_KDDIV_LOG                        LOG2((8192))
 #define TFDIFFERENTIAL_TERM_ENABLING        DISABLE
 
-#define PID_SPEED_KP_DEFAULT                3556/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
-#define PID_SPEED_KI_DEFAULT                2276/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
+#define PID_SPEED_KP_DEFAULT                2417/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
+#define PID_SPEED_KI_DEFAULT                2691/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
 #define PID_SPEED_KD_DEFAULT                0/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
 
 /* Speed control loop */
 #define SPEED_LOOP_FREQUENCY_HZ             (uint16_t)200 /*!<Execution rate of speed regulation loop (Hz) */
 
 /* Speed PID parameter dividers */
-#define SP_KPDIV                            32
-#define SP_KIDIV                            1024
+#define SP_KPDIV                            1
+#define SP_KIDIV                            32
 #define SP_KDDIV                            16
-#define SP_KPDIV_LOG                        LOG2((32))
-#define SP_KIDIV_LOG                        LOG2((1024))
+#define SP_KPDIV_LOG                        LOG2((1))
+#define SP_KIDIV_LOG                        LOG2((32))
 #define SP_KDDIV_LOG                        LOG2((16))
 
 /* USER CODE BEGIN PID_SPEED_INTEGRAL_INIT_DIV */
