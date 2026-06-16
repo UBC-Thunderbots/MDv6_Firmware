@@ -56,11 +56,11 @@
 #define ISR_FREQUENCY_HZ                    (PWM_FREQUENCY/REGULATION_EXECUTION_RATE) /*!< @brief FOC execution rate in Hz */
 
 /* Gains values for torque and flux control loops */
-#define PID_TORQUE_KP_DEFAULT               2247
-#define PID_TORQUE_KI_DEFAULT               1151
+#define PID_TORQUE_KP_DEFAULT               307
+#define PID_TORQUE_KI_DEFAULT               157
 #define PID_TORQUE_KD_DEFAULT               100
-#define PID_FLUX_KP_DEFAULT                 2247
-#define PID_FLUX_KI_DEFAULT                 1151
+#define PID_FLUX_KP_DEFAULT                 307
+#define PID_FLUX_KI_DEFAULT                 157
 #define PID_FLUX_KD_DEFAULT                 100
 
 /* Torque/Flux control loop gains dividers*/
@@ -72,19 +72,19 @@
 #define TF_KDDIV_LOG                        LOG2((8192))
 #define TFDIFFERENTIAL_TERM_ENABLING        DISABLE
 
-#define PID_SPEED_KP_DEFAULT                3556/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
-#define PID_SPEED_KI_DEFAULT                2276/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
+#define PID_SPEED_KP_DEFAULT                2445/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
+#define PID_SPEED_KI_DEFAULT                2648/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
 #define PID_SPEED_KD_DEFAULT                0/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
 
 /* Speed control loop */
 #define SPEED_LOOP_FREQUENCY_HZ             (uint16_t)200 /*!<Execution rate of speed regulation loop (Hz) */
 
 /* Speed PID parameter dividers */
-#define SP_KPDIV                            32
-#define SP_KIDIV                            1024
+#define SP_KPDIV                            8
+#define SP_KIDIV                            512
 #define SP_KDDIV                            16
-#define SP_KPDIV_LOG                        LOG2((32))
-#define SP_KIDIV_LOG                        LOG2((1024))
+#define SP_KPDIV_LOG                        LOG2((8))
+#define SP_KIDIV_LOG                        LOG2((512))
 #define SP_KDDIV_LOG                        LOG2((16))
 
 /* USER CODE BEGIN PID_SPEED_INTEGRAL_INIT_DIV */
