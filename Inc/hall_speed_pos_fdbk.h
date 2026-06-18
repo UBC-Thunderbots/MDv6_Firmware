@@ -199,6 +199,13 @@ typedef struct
 
   bool HallMtpa; /*!< if true at each sensor toggling, the true angle is set without ramp*/
 
+  uint16_t SpeedFilterCutoffFreqHz; /*!< EMA cutoff frequency in Hz. */
+
+  uint32_t SpeedFilterCoefQ31; /*!< Precomputed 2*pi*fc / TIMClockFreq coefficient in Q31 format. */
+
+  int32_t SpeedFilterStateDpp; /*!< Internal EMA state for filtered electrical speed. */
+
+  bool SpeedFilterInitialized; /*!< Tracks whether the EMA state has been initialized. */
 } HALL_Handle_t;
 
 void *HALL_TIMx_UP_IRQHandler(void *pHandleVoid);

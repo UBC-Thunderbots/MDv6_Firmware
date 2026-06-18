@@ -81,7 +81,103 @@
 #define CCER_CC1E_Set               ((uint16_t)0x0001)
 #define CCER_CC1E_Reset             ((uint16_t)0xFFFE)
 
+#define HALL_DEFAULT_SPEED_FILTER_CUTOFF_HZ   ((uint16_t)16U)
+#define TWO_PI_Q15                            ((uint32_t)205887U)
+#define ONE_Q15                               ((uint16_t)0x7FFFU)
+
 static void HALL_Init_Electrical_Angle(HALL_Handle_t *pHandle);
+static int16_t HALL_UpdateFilteredSpeed(HALL_Handle_t *pHandle, int32_t inputSpeedDpp, uint32_t deltaCounts);
+static uint16_t HALL_ComputeAlphaQ15(uint32_t deltaCounts, uint32_t coefQ31);
+
+/**
+  * @brief Update the Hall electrical speed estimate using an adaptive exponential 
+  *        moving average (EMA) filter.
+  *
+  * The speed estimate derived from Hall transitions is filtered using:
+  *
+  *     y[n] = y[n-1] + alpha * (x[n] - y[n-1])
+  *
+  * where alpha is computed from the elapsed time between Hall edges using an
+  * approximation of:
+  *
+  *     alpha = 1 - exp(-dt / tau)
+  *
+  * This allows the filter bandwidth to remain approximately constant in Hz even
+  * though Hall transitions occur at a variable rate. In contrast, a fixed-size
+  * moving average or fixed-alpha EMA produces a bandwidth that changes with motor
+  * speed because the time between samples is not constant.
+  *
+  * @param pHandle       Pointer to the Hall sensor handle.
+  * @param inputSpeedDpp Instantaneous electrical speed estimate in dpp
+  *                      (digital position per period).
+  * @param deltaCounts   Timer counts measured since the previous Hall transition.
+  *
+  * @return Filtered electrical speed estimate in dpp.
+  */
+static int16_t HALL_UpdateFilteredSpeed(HALL_Handle_t *pHandle, int32_t inputSpeedDpp, uint32_t deltaCounts)
+{
+  if (!pHandle->SpeedFilterInitialized)
+  {
+    /* Seed the filter with the first valid sample so startup begins at the
+     * measured speed instead of ramping from zero.
+     */
+    pHandle->SpeedFilterStateDpp = inputSpeedDpp;
+    pHandle->SpeedFilterInitialized = true;
+  }
+  else
+  {
+    /* EMA update in Q15 form:
+     *   
+     *   y[n] = y[n-1] + alpha * (x[n] - y[n-1])
+     * 
+     * Alpha grows automatically when Hall edges are farther apart, so the filter
+     * cutoff frequency remains approximately fixed in Hz instead of fixed in samples.
+     */
+    uint16_t alphaQ15 = HALL_ComputeAlphaQ15(deltaCounts, pHandle->SpeedFilterCoefQ31);
+    int32_t errorDpp = inputSpeedDpp - pHandle->SpeedFilterStateDpp;
+    pHandle->SpeedFilterStateDpp += (int32_t)(((int64_t)errorDpp * (int64_t)alphaQ15 + 0x4000LL) >> 15U);
+  }
+
+  int32_t filteredSpeed = pHandle->SpeedFilterStateDpp;
+
+  if (filteredSpeed > INT16_MAX)
+  {
+    filteredSpeed = INT16_MAX;
+  }
+  else if (filteredSpeed < INT16_MIN)
+  {
+    filteredSpeed = INT16_MIN;
+  }
+
+  pHandle->AvrElSpeedDpp = (int16_t)filteredSpeed;
+  return pHandle->AvrElSpeedDpp;
+}
+
+static uint16_t HALL_ComputeAlphaQ15(uint32_t deltaCounts, uint32_t coefQ31)
+{
+  if (0U == deltaCounts || 0U == coefQ31)
+  {
+    return 0U;
+  }
+
+  /* Convert the Hall interval into x = dt / tau */
+  uint32_t xQ15 = (uint32_t)(((uint64_t)deltaCounts * (uint64_t)coefQ31 + 0x8000ULL) >> 16U);
+
+  if (xQ15 >= ONE_Q15)
+  {
+    return ONE_Q15;
+  }
+
+  /* Approximate alpha = 1 - exp(-x) using backward-Euler approximation: alpha = x / (1 + x) */
+  uint32_t alphaQ15 = (uint32_t)(((uint64_t)xQ15 << 15U) / ((uint64_t)0x8000U + (uint64_t)xQ15));
+
+  if (alphaQ15 >= ONE_Q15)
+  {
+    return ONE_Q15;
+  }
+
+  return alphaQ15;
+}
 
 /**
   * @brief  It initializes the hardware peripherals (TIMx, GPIO and NVIC)
@@ -152,6 +248,14 @@ __weak void HALL_Init(HALL_Handle_t *pHandle)
 
     pHandle->PWMNbrPSamplingFreq = ((pHandle->_Super.hMeasurementFrequency * pHandle->PWMFreqScaling) /
                                     pHandle->SpeedSamplingFreqHz) - 1U;
+
+    pHandle->SpeedFilterCutoffFreqHz = HALL_DEFAULT_SPEED_FILTER_CUTOFF_HZ;
+
+    pHandle->SpeedFilterCoefQ31 = (uint32_t)((((uint64_t)pHandle->SpeedFilterCutoffFreqHz * (uint64_t)TWO_PI_Q15) << 16U) / (uint64_t)pHandle->TIMClockFreq);
+
+    pHandle->SpeedFilterStateDpp = 0;
+
+    pHandle->SpeedFilterInitialized = false;
 
     /* Reset speed reliability */
     pHandle->SensorIsReliable = true;
@@ -226,6 +330,8 @@ __weak void HALL_Clear(HALL_Handle_t *pHandle)
     pHandle->OVFCounter = 0U;
 
     pHandle->CompSpeed = 0;
+    pHandle->SpeedFilterStateDpp = 0;
+    pHandle->SpeedFilterInitialized = false;
 
     pHandle->Direction = POSITIVE;
 
@@ -396,6 +502,8 @@ __weak bool HALL_CalcAvrgMecSpeedUnit(HALL_Handle_t *pHandle, int16_t *hMecSpeed
       pHandle->_Super.hElSpeedDpp = 0;
       *hMecSpeedUnit = 0;
       pHandle->CompSpeed = 0;
+      pHandle->SpeedFilterStateDpp = 0;
+      pHandle->SpeedFilterInitialized = false;
     }
 
     pHandle->_Super.hAvrMecSpeedUnit = *hMecSpeedUnit;
@@ -592,6 +700,7 @@ __weak void *HALL_TIMx_CC_IRQHandler(void *pHandleVoid)
        on the SpeedPeriod buffer values */
       pHandle->BufferFilled = 0U ;
       pHandle->SpeedFIFOIdx = 0U;
+      pHandle->SpeedFilterInitialized = false;
     }
 
     if (true == pHandle->HallMtpa)
@@ -700,46 +809,18 @@ __weak void *HALL_TIMx_CC_IRQHandler(void *pHandleVoid)
       if (wCaptBuf < pHandle->MinPeriod)
       {
         /* Nothing to do */
-#ifdef NOT_IMPLEMENTED /* Not yet implemented */
-        pHandle->AvrElSpeedDpp = HALL_MAX_PSEUDO_SPEED;
-#endif
       }
       else
       {
-        pHandle->ElPeriodSum -= pHandle->SensorPeriod[pHandle->SpeedFIFOIdx]; /* value we gonna removed from the accumulator */
-        if (wCaptBuf >= pHandle->MaxPeriod)
-        {
-          pHandle->SensorPeriod[pHandle->SpeedFIFOIdx] = (int32_t)pHandle->MaxPeriod * pHandle->Direction;
-        }
-        else
-        {
-          pHandle->SensorPeriod[pHandle->SpeedFIFOIdx] = (int32_t)wCaptBuf ;
-          pHandle->SensorPeriod[pHandle->SpeedFIFOIdx] *= pHandle->Direction;
-        }
-          pHandle->ElPeriodSum += pHandle->SensorPeriod[pHandle->SpeedFIFOIdx];
-        /* Update pointers to speed buffer */
-        pHandle->SpeedFIFOIdx++;
-        if (pHandle->SpeedFIFOIdx == pHandle->SpeedBufferSize)
-        {
-          pHandle->SpeedFIFOIdx = 0U;
-        }
         if (pHandle->SensorIsReliable)
         {
-          if ((pHandle->BufferFilled < pHandle->SpeedBufferSize) && (wCaptBuf != 0U))
-          {
-            uint32_t tempReg = (pHandle->PseudoFreqConv / wCaptBuf) * (uint32_t)pHandle->Direction;
-            pHandle->AvrElSpeedDpp = (int16_t)tempReg;
-          }
-          else
-          {
-            /* Average speed allow to smooth the mechanical sensors misalignement */
-            pHandle->AvrElSpeedDpp = (int16_t)((int32_t)pHandle->PseudoFreqConv /
-                                               (pHandle->ElPeriodSum / (int32_t)pHandle->SpeedBufferSize)); /* Average value */
-          }
+          int32_t instantaneousElSpeedDpp = (int32_t)((pHandle->PseudoFreqConv / (uint32_t)wCaptBuf) * (uint32_t)pHandle->Direction);
+          pHandle->AvrElSpeedDpp = HALL_UpdateFilteredSpeed(pHandle, instantaneousElSpeedDpp, wCaptBuf);
         }
         else /* Sensor is not reliable */
         {
-          pHandle->AvrElSpeedDpp = 0;
+          pHandle->SpeedFilterStateDpp = 0;
+          pHandle->SpeedFilterInitialized = false;
         }
       }
       /* Reset the number of overflow occurred */
@@ -807,6 +888,8 @@ __weak void *HALL_TIMx_UP_IRQHandler(void *pHandleVoid)
 
       /* Reset first capture flag */
       pHandle->FirstCapt = 0U;
+      pHandle->SpeedFilterStateDpp = 0;
+      pHandle->SpeedFilterInitialized = false;
 
       /* Reset the SensorSpeed buffer*/
       uint8_t bIndex;
