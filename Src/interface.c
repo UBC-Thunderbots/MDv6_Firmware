@@ -68,6 +68,11 @@ static void PopulateTx_ResponseForCurrentType(uint8_t *tx, uint8_t seq);
 static void ProcessSpiFrame(const uint8_t *rx);
 static void HandleCompletedDmaHalf(uint8_t half_index);
 
+static void Interface_ResyncSpi(void);
+static void Interface_InitCsResync(void);
+
+void ProcessSpiTransaction(uint8_t *rx, uint8_t *tx);
+
 void ProcessRx_SetTargetSpeed(const uint8_t *rx);
 void ProcessRx_SetTargetTorque(const uint8_t *rx);
 void ProcessRx_SetResponseType(const uint8_t *rx);
@@ -118,7 +123,11 @@ void Interface_Loop(void)
 {
   HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t *)tx_bufs, (uint8_t *)rx_bufs, MESSAGE_SIZE * 2);
 
-  while (1) 
+  /* Enable the CS-edge resync only after the DMA is running, so the EXTI
+     handler never re-arms a transfer that hasn't been started yet. */
+  Interface_InitCsResync();
+
+  while (1)
   {		
     if (txrx_half_completed) 
     {
@@ -679,8 +688,90 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef* hspi)
 
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef* hspi)
 {
-  if (hspi->Instance == SPI1) 
+  if (hspi->Instance == SPI1)
   {
-    // Do nothing for now
+    /* An OVR/UDR/MODF error means the SPI/DMA byte framing has very likely
+       slipped relative to the CS frame. Re-synchronize so the slip cannot
+       latch permanently. */
+    Interface_ResyncSpi();
+  }
+}
+
+/* SPI framing resync ---------------------------------------------------------*/
+
+/**
+ * Re-arms the SPI DMA so the byte framing snaps back into alignment with the
+ * master's CS frame.
+ *
+ * The SPI slave runs a free-running circular RX/TX DMA over a double buffer,
+ * started once and never reset. The hardware NSS resets bit alignment every
+ * frame, but nothing resets the DMA byte index. A single glitch or SPI
+ * OVR/UDR (more likely under high motor current) can advance one DMA channel
+ * by one byte, after which every response is permanently offset by one byte
+ * (RX and TX are independent DMA channels, so the TX/MISO side can slip while
+ * RX/MOSI stays aligned). This tears down and restarts the transfer, which
+ * re-zeros both DMA byte counters; called during the inter-frame gap so the
+ * next CS assertion starts a clean, byte-aligned frame.
+ */
+static void Interface_ResyncSpi(void)
+{
+  HAL_SPI_DMAStop(&hspi1);
+  __HAL_SPI_DISABLE(&hspi1);
+  /* Drop any stale bytes left in the RX FIFO so the re-armed RX DMA does not
+     start one byte ahead. */
+  HAL_SPIEx_FlushRxFifo(&hspi1);
+  __HAL_SPI_CLEAR_OVRFLAG(&hspi1);
+
+  txrx_half_completed = false;
+  txrx_completed = false;
+
+  /* Re-arms the transfer and re-enables the SPI; both DMA byte counters
+     restart from the top of the double buffer. */
+  HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t *)tx_bufs, (uint8_t *)rx_bufs, FRAME_SIZE * 2);
+}
+
+/**
+ * Enables a rising-edge (CS deassert) interrupt on PA15 (SPI1_NSS) used to
+ * re-synchronize the SPI DMA byte framing at each frame boundary.
+ *
+ * The EXTI line is configured with direct register access so the pin stays in
+ * its SPI1_NSS alternate function (hardware NSS keeps working); EXTI taps the
+ * pin input regardless of its alternate-function setting.
+ */
+static void Interface_InitCsResync(void)
+{
+  __HAL_RCC_SYSCFG_CLK_ENABLE();
+
+  /* Map EXTI line 15 to port A (PA15). */
+  SYSCFG->EXTICR[3] =
+      (SYSCFG->EXTICR[3] & ~SYSCFG_EXTICR4_EXTI15) | SYSCFG_EXTICR4_EXTI15_PA;
+
+  EXTI->IMR  |= EXTI_IMR_MR15;    /* unmask interrupt on line 15            */
+  EXTI->RTSR |= EXTI_RTSR_TR15;   /* trigger on rising edge (CS deassert)   */
+  EXTI->FTSR &= ~EXTI_FTSR_TR15;  /* not on falling edge (CS assert)        */
+
+  __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_15);
+
+  /* Priority 3 == the SPI DMA IRQ (DMA1_Channel2_3) and below the motor-control
+     interrupts, so the resync cannot preempt (and corrupt) SPI HAL state, nor
+     disturb FOC timing. */
+  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 3, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
+}
+
+/**
+ * CS rising-edge (end-of-frame) handler. If either DMA byte counter is no
+ * longer on a frame boundary, the byte framing has slipped, so re-synchronize
+ * during this inter-frame gap.
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == GPIO_PIN_15)
+  {
+    if ((__HAL_DMA_GET_COUNTER(&hdma_spi1_rx) % FRAME_SIZE) != 0U ||
+        (__HAL_DMA_GET_COUNTER(&hdma_spi1_tx) % FRAME_SIZE) != 0U)
+    {
+      Interface_ResyncSpi();
+    }
   }
 }
