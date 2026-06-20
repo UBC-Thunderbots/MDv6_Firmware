@@ -81,7 +81,7 @@
 #define CCER_CC1E_Set               ((uint16_t)0x0001)
 #define CCER_CC1E_Reset             ((uint16_t)0xFFFE)
 
-#define HALL_DEFAULT_SPEED_FILTER_CUTOFF_HZ   ((uint16_t)7U)
+#define HALL_DEFAULT_SPEED_FILTER_CUTOFF_HZ   ((uint16_t)16U)
 #define TWO_PI_Q15                            ((uint32_t)205887U)
 #define ONE_Q15                               ((uint16_t)0x7FFFU)
 

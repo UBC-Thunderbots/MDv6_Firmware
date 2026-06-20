@@ -116,16 +116,4 @@ void DMA1_Channel2_3_IRQHandler(void)
 
 /* USER CODE BEGIN 1 */
 
-/**
-  * @brief This function handles EXTI line 4 to 15 interrupts.
-  *
-  * Used for the SPI chip-select (PA15 / SPI1_NSS) rising-edge interrupt that
-  * re-synchronizes the SPI DMA byte framing. See Interface_InitCsResync() and
-  * HAL_GPIO_EXTI_Callback() in interface.c.
-  */
-void EXTI4_15_IRQHandler(void)
-{
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_15);
-}
-
 /* USER CODE END 1 */
