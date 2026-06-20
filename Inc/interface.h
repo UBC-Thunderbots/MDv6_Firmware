@@ -10,7 +10,8 @@
 #ifndef __INTERFACE_H
 #define __INTERFACE_H
 
-#define FRAME_SIZE 6
+#define MESSAGE_SIZE 8
+#define MESSAGE_DELIMITER 0xAA
 
 typedef enum {
   NO_OP                        = 0x00,
