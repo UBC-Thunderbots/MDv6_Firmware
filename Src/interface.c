@@ -359,10 +359,10 @@ static void HandleCompletedDmaHalf(uint8_t half_index)
  * Processes the received SPI frame to update the target speed for 
  * the motor and start/stop the motor based on the enable flag.
  *
- *  +--------+--------+---------------+-------+-------+
- *  | Opcode | Enable |     Speed     |       |  CRC  |
- *  +--------+--------+---------------+-------+-------+
- *      0        1        2       3       4       5
+ *  +--------+---------------+-------+
+ *  | Enable |     Speed     |       |
+ *  +--------+---------------+-------+
+ *      1        2       3       4    
  */
 void ProcessRx_SetTargetSpeed(const uint8_t *rx)
 {
@@ -375,10 +375,10 @@ void ProcessRx_SetTargetSpeed(const uint8_t *rx)
  * Processes the received SPI frame to update the target torque for 
  * the motor and start/stop the motor based on the enable flag.
  *
- *  +--------+--------+---------------+-------+-------+
- *  | Opcode | Enable |    Torque     |       |  CRC  |
- *  +--------+--------+---------------+-------+-------+
- *      0        1        2       3       4       5
+ *  +--------+---------------+-------+
+ *  | Enable |    Torque     |       |
+ *  +--------+---------------+-------+
+ *      1        2       3       4    
  */
 void ProcessRx_SetTargetTorque(const uint8_t *rx) 
 {
@@ -391,10 +391,10 @@ void ProcessRx_SetTargetTorque(const uint8_t *rx)
  * Processes the received SPI frame to update the type of response 
  * that will be sent back to the master in subsequent transactions.
  *
- *  +--------+--------+-----------------------+-------+
- *  | Opcode |  Type  |                       |  CRC  |
- *  +--------+--------+-----------------------+-------+
- *      0        1         2      3      4        5
+ *  +--------+-----------------------+
+ *  |  Type  |                       |
+ *  +--------+-----------------------+
+ *      1         2      3      4     
  */
 void ProcessRx_SetResponseType(const uint8_t *rx) 
 {
@@ -405,10 +405,10 @@ void ProcessRx_SetResponseType(const uint8_t *rx)
  * Processes the received SPI frame to update the Kp and Ki 
  * parameters for the torque (Iq) PID controller.
  *
- *  +--------+----------------+---------------+-------+
- *  | Opcode |       Kp       |       Ki      |  CRC  |
- *  +--------+----------------+---------------+-------+
- *      0        1       2        3       4       5
+ *  +----------------+---------------+
+ *  |       Kp       |       Ki      |
+ *  +----------------+---------------+
+ *      1       2        3       4    
  */
 void ProcessRx_SetPidTorqueKpKi(const uint8_t *rx) 
 {
@@ -423,10 +423,10 @@ void ProcessRx_SetPidTorqueKpKi(const uint8_t *rx)
  * Processes the received SPI frame to update the Kp and Ki 
  * parameters for the flux (Id) PID controller.
  *
- *  +--------+----------------+---------------+-------+
- *  | Opcode |       Kp       |       Ki      |  CRC  |
- *  +--------+----------------+---------------+-------+
- *      0        1       2        3       4       5
+ *  +----------------+---------------+
+ *  |       Kp       |       Ki      |
+ *  +----------------+---------------+
+ *      1       2        3       4    
  */
 void ProcessRx_SetPidFluxKpKi(const uint8_t *rx) 
 {
@@ -441,10 +441,10 @@ void ProcessRx_SetPidFluxKpKi(const uint8_t *rx)
  * Processes the received SPI frame to update the Kp and Ki 
  * parameters for the speed PID controller.
  *
- *  +--------+----------------+---------------+-------+
- *  | Opcode |       Kp       |       Ki      |  CRC  |
- *  +--------+----------------+---------------+-------+
- *      0        1       2        3       4       5
+ *  +----------------+---------------+
+ *  |       Kp       |       Ki      |
+ *  +----------------+---------------+
+ *      1       2        3       4    
  */
 void ProcessRx_SetPidSpeedKpKi(const uint8_t *rx) 
 {
@@ -459,10 +459,10 @@ void ProcessRx_SetPidSpeedKpKi(const uint8_t *rx)
  * Processes the received SPI frame to update the Ka and Kv 
  * parameters for the speed feedforward controller.
  *
- *  +--------+----------------+---------------+-------+
- *  | Opcode |       Ka       |       Kv      |  CRC  |
- *  +--------+----------------+---------------+-------+
- *      0        1       2        3       4       5
+ *  +----------------+---------------+
+ *  |       Ka       |       Kv      |
+ *  +----------------+---------------+
+ *      1       2        3       4    
  */
 void ProcessRx_SetSpeedFeedForwardKaKv(const uint8_t *rx) 
 {
@@ -477,10 +477,10 @@ void ProcessRx_SetSpeedFeedForwardKaKv(const uint8_t *rx)
  * Processes the received SPI frame to update the Ks 
  * parameter for the speed feedforward controller.
  *
- *  +--------+----------------+---------------+-------+
- *  | Opcode |       Ks       |               |  CRC  |
- *  +--------+----------------+---------------+-------+
- *      0        1       2        3       4       5
+ *  +----------------+---------------+
+ *  |       Ks       |               |
+ *  +----------------+---------------+
+ *      1       2        3       4    
  */
 void ProcessRx_SetSpeedFeedForwardKs(const uint8_t *rx) 
 {
@@ -493,10 +493,10 @@ void ProcessRx_SetSpeedFeedForwardKs(const uint8_t *rx)
  * Populates the TX buffer with fields corresponding to the
  * current measured speed and motor faults.
  *
- *  +--------+---------------+----------------+-------+
- *  |  Type  |  Speed (RPM)  |     Faults     |  CRC  |
- *  +--------+---------------+----------------+-------+
- *      0        1       2        3      4       5
+ *  +---------------+----------------+
+ *  |  Speed (RPM)  |     Faults     |
+ *  +---------------+----------------+
+ *      1       2        3      4     
  */
 void PopulateTx_ResponseSpeedAndFaults(uint8_t *tx, uint8_t seq) 
 {
@@ -515,10 +515,10 @@ void PopulateTx_ResponseSpeedAndFaults(uint8_t *tx, uint8_t seq)
  * Populates the TX buffer with fields corresponding to the
  * current Iq and Id values for the motor.
  *
- *  +--------+---------------+----------------+-------+
- *  |  Type  |      Iq       |       Id       |  CRC  |
- *  +--------+---------------+----------------+-------+
- *      0        1       2        3      4       5
+ *  +---------------+----------------+
+ *  |      Iq       |       Id       |
+ *  +---------------+----------------+
+ *      1       2        3      4     
  */
 void PopulateTx_ResponseIqAndId(uint8_t *tx, uint8_t seq) 
 {
@@ -536,10 +536,10 @@ void PopulateTx_ResponseIqAndId(uint8_t *tx, uint8_t seq)
  * Populates the TX buffer with fields corresponding to the
  * current Vq and Vd values for the motor.
  *
- *  +--------+---------------+----------------+-------+
- *  |  Type  |      Vq       |       Vd       |  CRC  |
- *  +--------+---------------+----------------+-------+
- *      0        1       2        3      4       5
+ *  +---------------+----------------+
+ *  |      Vq       |       Vd       |
+ *  +---------------+----------------+
+ *      1       2        3      4     
  */
 void PopulateTx_ResponseVqAndVd(uint8_t *tx, uint8_t seq) 
 {
@@ -557,10 +557,10 @@ void PopulateTx_ResponseVqAndVd(uint8_t *tx, uint8_t seq)
  * Populates the TX buffer with fields corresponding to the
  * phase current and voltage amplitudes for the motor.
  *
- *  +--------+---------------+----------------+-------+
- *  |  Type  | Phase Current |  Phase Voltage |  CRC  |
- *  +--------+---------------+----------------+-------+
- *      0        1       2        3      4       5
+ *  +---------------+----------------+
+ *  | Phase Current |  Phase Voltage |
+ *  +---------------+----------------+
+ *      1       2        3      4     
  */
 void PopulateTx_ResponsePhaseCurrentAndVoltage(uint8_t *tx, uint8_t seq) 
 {
@@ -579,10 +579,10 @@ void PopulateTx_ResponsePhaseCurrentAndVoltage(uint8_t *tx, uint8_t seq)
  * Populates the TX buffer with fields corresponding to the
  * current Iq and reference Iq values for the motor.
  *
- *  +--------+---------------+----------------+-------+
- *  |  Type  |      Iq       |     Iq Ref     |  CRC  |
- *  +--------+---------------+----------------+-------+
- *      0        1       2        3      4       5
+ *  +---------------+----------------+
+ *  |      Iq       |     Iq Ref     |
+ *  +---------------+----------------+
+ *      1       2        3      4     
  */
 void PopulateTx_ResponseIqAndIqRef(uint8_t *tx, uint8_t seq) 
 {
@@ -601,10 +601,10 @@ void PopulateTx_ResponseIqAndIqRef(uint8_t *tx, uint8_t seq)
  * Populates the TX buffer with fields corresponding to the
  * current Id and reference Id values for the motor.
  *
- *  +--------+---------------+----------------+-------+
- *  |  Type  |      Id       |     Id Ref     |  CRC  |
- *  +--------+---------------+----------------+-------+
- *      0        1       2        3      4       5
+ *  +---------------+----------------+
+ *  |      Id       |     Id Ref     |
+ *  +---------------+----------------+
+ *      1       2        3      4     
  */
 void PopulateTx_ResponseIdAndIdRef(uint8_t *tx, uint8_t seq) 
 {
@@ -623,10 +623,10 @@ void PopulateTx_ResponseIdAndIdRef(uint8_t *tx, uint8_t seq)
  * Populates the TX buffer with fields corresponding to the
  * current measured speed and reference speed in RPM.
  *
- *  +--------+---------------+----------------+-------+
- *  |  Type  |     Speed     |    Speed Ref   |  CRC  |
- *  +--------+---------------+----------------+-------+
- *      0        1       2        3      4       5
+ *  +---------------+----------------+
+ *  |     Speed     |    Speed Ref   |
+ *  +---------------+----------------+
+ *      1       2        3      4     
  */
 void PopulateTx_ResponseSpeedAndSpeedRef(uint8_t *tx, uint8_t seq) 
 {
